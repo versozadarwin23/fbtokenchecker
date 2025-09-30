@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Facebook Token Checker V3 (Client-side Only)</title>
+  <title>Facebook Token Checker V3</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -249,7 +249,7 @@
       </div>
     </div>
     <div class="button-group">
-      <button id="checkBtn" disabled>🚀 Start Check</button>
+      <button id="checkBtn">🚀 Start Check</button>
       <button id="downloadBtn" disabled>💾 Download CSV</button>
       <button id="clearBtn">🛑 Stop/Reset</button>
     </div>
@@ -304,23 +304,37 @@
     <p class="developer-info">Developed by **Dars: V3**</p>
   </div>
   <script>
-    // Anti-inspect element & right-click blockers
+    // ------------------ ANTI-INSPECT ELEMENT & RIGHT-CLICK BLOCKERS ------------------
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
     });
     document.onkeydown = function(e) {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        return false;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
+        e.preventDefault();
+        return false;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
         e.preventDefault();
         return false;
       }
     };
-
-    let results = [], totalTokens = 0;
+    
+    let results = [], totalTokens = 0, tokensChecked = 0;
+    let successCount = 0, failedCount = 0;
     const fileInput = document.getElementById('fileInput');
-    const tokenCountLabel = document.getElementById('tokenCount');
     const checkBtn = document.getElementById('checkBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    const progressBar = document.getElementById('progressBar');
     const successList = document.getElementById('successList');
     const failedList = document.getElementById('failedList');
     const successCountLabel = document.getElementById('successCount');
@@ -328,10 +342,28 @@
     const remainingCountLabel = document.getElementById('remainingCount');
     const checkIcon = document.getElementById('checkIcon');
 
-    // MGA BUTTONS AT PANEL AY HINDI NA GAGANA (para sa demo purposes)
-    checkBtn.textContent = 'Functionality Disabled';
-    checkBtn.disabled = true;
-    downloadBtn.disabled = true;
+    // Function to scroll to the bottom of the log panels
+    function autoScroll() {
+      successList.scrollTop = successList.scrollHeight;
+      failedList.scrollTop = failedList.scrollHeight;
+    }
+
+    function updateProgressBar() {
+      if (totalTokens === 0) return;
+      const pct = Math.round((tokensChecked / totalTokens) * 100);
+      progressBar.style.width = pct + '%';
+      progressBar.textContent = `${pct}% (${tokensChecked}/${totalTokens})`;
+      remainingCountLabel.textContent = `${totalTokens - tokensChecked}`;
+      
+      if (tokensChecked === totalTokens) {
+        progressBarContainer.style.display = 'none';
+        checkBtn.disabled = false;
+        downloadBtn.disabled = false;
+        remainingCountLabel.textContent = `Done`;
+        checkIcon.style.display = 'inline';
+        checkBtn.textContent = '🚀 Start Check';
+      }
+    }
 
     fileInput.addEventListener('change', () => {
       if (!fileInput.files.length) return;
@@ -339,28 +371,164 @@
       reader.onload = () => {
         const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
         totalTokens = lines.length;
+        tokensChecked = 0;
         remainingCountLabel.textContent = `${totalTokens}`;
+        checkIcon.style.display = 'none';
       };
       reader.readAsText(fileInput.files[0]);
     });
 
     clearBtn.addEventListener('click', () => {
-      totalTokens = 0;
-      successCount = 0;
-      failedCount = 0;
+      results = []; tokensChecked = 0; totalTokens = 0;
+      successCount = 0; failedCount = 0;
       successCountLabel.textContent = '0';
       failedCountLabel.textContent = '0';
       successList.textContent = 'No successes yet.';
       failedList.textContent = 'No failures yet.';
       remainingCountLabel.textContent = '0';
       checkIcon.style.display = 'none';
-      downloadBtn.disabled = true;
+      progressBarContainer.style.display = 'none';
+      progressBar.style.width = '0%'; progressBar.textContent = '0%';
+      downloadBtn.disabled = true; checkBtn.disabled = false;
       fileInput.value = '';
+      checkBtn.textContent = '🚀 Start Check';
+      successList.style.overflowY = 'hidden';
+      failedList.style.overflowY = 'hidden';
+    });
+    
+    downloadBtn.addEventListener('click', () => {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Email,Token,Status,Message\n";
+      const successResults = results.filter(item => item.status === 'Success');
+      const failedResults = results.filter(item => item.status === 'Failed');
+      successResults.forEach(item => {
+        const row = [
+          `"${item.email.replace(/"/g, '""')}"`,
+          `"${item.token.replace(/"/g, '""')}"`,
+          `"${item.status}"`,
+          `"${(item.responseMessage || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+      failedResults.forEach(item => {
+        let errorMessage = item.responseMessage;
+        if (errorMessage === 'Connection Error') {
+          errorMessage = 'Blocked';
+        } else if (errorMessage === 'Unknown Error') {
+          errorMessage = 'Goods';
+        }
+        const row = [
+          `"${item.email.replace(/"/g, '""')}"`,
+          `"${item.token.replace(/"/g, '""')}"`,
+          `"${item.status}"`,
+          `"${(errorMessage || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "token_results.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     });
 
-    // Dummy functionality for download button
-    downloadBtn.addEventListener('click', () => {
-      alert('Download functionality is disabled in this client-side version.');
+    checkBtn.addEventListener('click', () => {
+      if (totalTokens === 0 || !fileInput.files.length) {
+        return alert('❌ Please select a file.');
+      }
+      checkBtn.textContent = 'Checking...';
+      checkBtn.disabled = true;
+      successList.style.overflowY = 'auto';
+      failedList.style.overflowY = 'auto';
+      results = []; tokensChecked = 0;
+      successCount = 0; failedCount = 0;
+      successCountLabel.textContent = '0';
+      failedCountLabel.textContent = '0';
+      successList.textContent = ''; 
+      failedList.textContent = '';
+      downloadBtn.disabled = true;
+      progressBarContainer.style.display = 'block';
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
+        totalTokens = lines.length;
+        
+        for (const line of lines) {
+          let email = 'N/A', token = line.trim();
+          if (line.includes('|')) {
+            const parts = line.split('|');
+            email = parts[0].trim();
+            token = parts[1]?.trim() || '';
+          }
+          
+          let status = 'Failed';
+          let responseMessage = 'Unknown Error';
+          
+          if (token) {
+            try {
+              // Direct client-side fetch to Facebook Graph API
+              const res = await fetch(`https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`);
+              const data = await res.json();
+              
+              if (res.ok) { // Check if HTTP status code is in the 200s
+                if (data.id) {
+                  status = 'Success';
+                } else {
+                  responseMessage = 'Invalid API Response';
+                }
+              } else {
+                if (data.error && data.error.message) {
+                  responseMessage = data.error.message;
+                } else {
+                  responseMessage = 'API Request Failed';
+                }
+              }
+            } catch (e) {
+              responseMessage = 'Network/Connection Error';
+            }
+          }
+          
+          const result = { email, token, status, responseMessage };
+          results.push(result);
+          
+          const logEntry = document.createElement('div');
+          const aTag = document.createElement('a');
+          aTag.target = '_blank';
+          aTag.textContent = 'Check Link';
+          aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(token)}`;
+
+          if (status === 'Success') {
+            const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ');
+            logEntry.appendChild(textNode);
+            logEntry.appendChild(aTag);
+            successList.appendChild(logEntry);
+            successCount++;
+          } else {
+            const displayMessage = (responseMessage === 'Network/Connection Error') ? 'Blocked' : responseMessage;
+            const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ' + displayMessage + ' ');
+            logEntry.appendChild(textNode);
+            logEntry.appendChild(aTag);
+            failedList.appendChild(logEntry);
+            failedCount++;
+          }
+          
+          successCountLabel.textContent = successCount;
+          failedCountLabel.textContent = failedCount;
+          tokensChecked++;
+          updateProgressBar();
+          autoScroll();
+        }
+
+        tokensChecked = totalTokens;
+        updateProgressBar();
+        downloadBtn.disabled = false;
+        progressBarContainer.style.display = 'none';
+        checkBtn.textContent = '🚀 Start Check';
+      };
+      reader.readAsText(fileInput.files[0]);
     });
   </script>
 </body>
