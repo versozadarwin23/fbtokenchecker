@@ -434,20 +434,24 @@
       document.body.removeChild(link);
     });
 
-    checkBtn.addEventListener('click', () => {
+    checkBtn.addEventListener('click', async () => {
       if (totalTokens === 0 || !fileInput.files.length) {
         return alert('❌ Please select a file.');
       }
+      
       checkBtn.textContent = 'Checking...';
       checkBtn.disabled = true;
+      
       successList.style.overflowY = 'auto';
       failedList.style.overflowY = 'auto';
+
       results = []; tokensChecked = 0;
       successCount = 0; failedCount = 0;
       successCountLabel.textContent = '0';
       failedCountLabel.textContent = '0';
       successList.textContent = ''; 
       failedList.textContent = '';
+      
       downloadBtn.disabled = true;
       progressBarContainer.style.display = 'block';
 
@@ -464,31 +468,8 @@
             token = parts[1]?.trim() || '';
           }
           
-          let status = 'Failed';
-          let responseMessage = 'Unknown Error';
-          
-          if (token) {
-            try {
-              const res = await fetch(`https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`);
-              const data = await res.json();
-              
-              if (res.ok) {
-                if (data.id) {
-                  status = 'Success';
-                } else {
-                  responseMessage = 'Invalid API Response';
-                }
-              } else {
-                if (data.error && data.error.message) {
-                  responseMessage = data.error.message;
-                } else {
-                  responseMessage = 'API Request Failed';
-                }
-              }
-            } catch (e) {
-              responseMessage = 'Network/Connection Error';
-            }
-          }
+          const status = 'Check Manually'; // Status is now manual
+          const responseMessage = 'N/A';
           
           const result = { email, token, status, responseMessage };
           results.push(result);
@@ -499,20 +480,13 @@
           aTag.textContent = 'Check Link';
           aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(token)}`;
 
-          if (status === 'Success') {
-            const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ');
-            logEntry.appendChild(textNode);
-            logEntry.appendChild(aTag);
-            successList.appendChild(logEntry);
-            successCount++;
-          } else {
-            const displayMessage = (responseMessage === 'Network/Connection Error') ? 'Blocked' : responseMessage;
-            const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ' + displayMessage + ' ');
-            logEntry.appendChild(textNode);
-            logEntry.appendChild(aTag);
-            failedList.appendChild(logEntry);
-            failedCount++;
-          }
+          // For simplicity, we'll list all tokens under "Failed" with a link
+          // since we can't automatically verify their status.
+          const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - Check manually ');
+          logEntry.appendChild(textNode);
+          logEntry.appendChild(aTag);
+          failedList.appendChild(logEntry);
+          failedCount++;
           
           successCountLabel.textContent = successCount;
           failedCountLabel.textContent = failedCount;
