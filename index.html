@@ -514,15 +514,16 @@
             let responseMessage = 'Unknown Error';
             if (token) {
               try {
-                // Direct call to Facebook Graph API
-                const url = `https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`;
-                const res = await fetch(url);
+                // Revert to calling the PHP proxy script
+                const res = await fetch(`proxy.php?token=${encodeURIComponent(token)}`);
                 const data = await res.json();
-                
                 if (data.id) {
                   status = 'Success';
+                  responseMessage = '';
                 } else if (data.error && data.error.message) {
                   responseMessage = data.error.message;
+                } else if (data.error_message) { // Handle proxy.php's custom error
+                  responseMessage = data.error_message;
                 } else {
                   responseMessage = 'Invalid API Response';
                 }
@@ -547,7 +548,7 @@
               successList.appendChild(logEntry);
               successCount++;
             } else {
-              const displayMessage = (responseMessage === 'Connection Error') ? 'Blocked' : responseMessage;
+              const displayMessage = (responseMessage === 'Connection Error' || responseMessage === 'cURL/Connection Error or Invalid API Response') ? 'Blocked' : responseMessage;
               const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ' + displayMessage + ' ');
               logEntry.appendChild(textNode);
               logEntry.appendChild(aTag);
