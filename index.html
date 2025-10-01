@@ -517,7 +517,7 @@
         totalTokens = lines.length;
         remainingCountLabel.textContent = `${totalTokens}`;
 
-        const BATCH_SIZE = 5;
+        const BATCH_SIZE = 2;
         const batches = [];
         for (let i = 0; i < totalTokens; i += BATCH_SIZE) {
           batches.push(lines.slice(i, i + BATCH_SIZE));
