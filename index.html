@@ -47,7 +47,6 @@
       text-align: center;
     }
 
-    /* Top Controls */
     .top-controls { margin-bottom: 15px; }
     input[type=file] {
       background: var(--secondary-gray);
@@ -100,7 +99,6 @@
       margin-bottom: 10px;
     }
 
-    /* Results Layout */
     .results {
       display: flex;
       gap: 25px;
@@ -135,7 +133,6 @@
     .failed-panel { border: 2px solid var(--fail-red); }
     .failed-panel h3 { color: var(--fail-red); }
 
-    /* New styles for links inside panels */
     .panel-content a {
       color: #58B0FF;
       text-decoration: none;
@@ -146,7 +143,6 @@
       color: #3B9AE2;
     }
 
-    /* Buttons */
     .button-group { display: flex; gap: 20px; flex-shrink: 0; }
     button {
       flex: 1; padding: 15px; border-radius: 10px; border: none;
@@ -173,7 +169,6 @@
       transition: width 0.4s ease;
     }
 
-    /* Social Links */
     .social-links-container {
       margin-top: auto;
       text-align: center;
@@ -215,7 +210,6 @@
         margin-top: 15px;
     }
 
-    /* --- MOBILE STYLES (MEDIA QUERIES) --- */
     @media (max-width: 700px) {
       body { padding: 15px; }
       .container {
@@ -247,7 +241,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Facebook Token Checker V3</h2>
+    <h2>FB Token Checker V3</h2>
 
     <div class="top-controls">
       <input type="file" id="fileInput" accept=".txt">
@@ -334,7 +328,6 @@
   </div>
 
   <script>
-    // ------------------ ANTI-INSPECT ELEMENT & RIGHT-CLICK BLOCKERS ------------------
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
     });
@@ -377,7 +370,6 @@
     const remainingCountLabel = document.getElementById('remainingCount');
     const checkIcon = document.getElementById('checkIcon');
 
-    // Function to scroll to the bottom of the log panels
     function autoScroll() {
       successList.scrollTop = successList.scrollHeight;
       failedList.scrollTop = failedList.scrollHeight;
@@ -435,7 +427,7 @@
     
     downloadBtn.addEventListener('click', () => {
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Email,Token,Status,Message\n";
+      csvContent += "Email,Token,Status\n";
 
       const successResults = results.filter(item => item.status === 'Success');
       const failedResults = results.filter(item => item.status === 'Failed');
@@ -444,19 +436,16 @@
         const row = [
           `"${item.email.replace(/"/g, '""')}"`,
           `"${item.token.replace(/"/g, '""')}"`,
-          `"${item.status}"`,
-          `"${(item.responseMessage || '').replace(/"/g, '""')}"`
+          `"${item.status}"`
         ];
         csvContent += row.join(",") + "\n";
       });
 
       failedResults.forEach(item => {
-        let errorMessage = item.responseMessage;
         const row = [
           `"${item.email.replace(/"/g, '""')}"`,
           `"${item.token.replace(/"/g, '""')}"`,
-          `"${item.status}"`,
-          `"${(errorMessage || '').replace(/"/g, '""')}"`
+          `"${item.status}"`
         ];
         csvContent += row.join(",") + "\n";
       });
@@ -470,7 +459,7 @@
       document.body.removeChild(link);
     });
 
-    checkBtn.addEventListener('click', () => {
+    checkBtn.addEventListener('click', async () => {
       if (totalTokens === 0 || !fileInput.files.length) {
         return alert('❌ Please select a file.');
       }
@@ -496,53 +485,63 @@
         const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
         totalTokens = lines.length;
         
-        const promises = lines.map(line => {
-          return new Promise(async (resolve) => {
-            let email = 'N/A', token = line.trim();
-            if (line.includes('|')) {
-              const parts = line.split('|');
-              email = parts[0].trim();
-              token = parts[1]?.trim() || '';
-            }
+        const batchSize = 20;
 
-            let status = 'Failed';
-            let responseMessage = 'Unknown Error';
-            if (token) {
-              try {
-                // **WARNING: DIREKTA ITONG REQUEST SA FACEBOOK GRAPH API.**
-                // NANGANGAMBA DITO ANG ACCESS TOKEN AT MAAARING MA-COMPROMISE.
-                const res = await fetch(`https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`);
-                const data = await res.json();
-                if (data.id) {
-                  status = 'Success';
-                } else if (data.error && data.error.message) {
-                  responseMessage = data.error.message;
-                } else {
-                  responseMessage = 'Invalid API Response';
-                }
-              } catch (e) {
-                responseMessage = 'Connection Error';
+        for (let i = 0; i < lines.length; i += batchSize) {
+          const batch = lines.slice(i, i + batchSize);
+
+          const promises = batch.map(line => {
+            return new Promise(async (resolve) => {
+              let email = 'N/A', token = line.trim();
+              if (line.includes('|')) {
+                const parts = line.split('|');
+                email = parts[0].trim();
+                token = parts[1]?.trim() || '';
               }
-            }
-            
-            const result = { email, token, status, responseMessage };
-            
+
+              let status = 'Failed';
+              let responseMessage = 'Unknown Error';
+              if (token) {
+                try {
+                  const res = await fetch(`https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`);
+                  const data = await res.json();
+                  if (data.id) {
+                    status = 'Success';
+                  } else if (data.error && data.error.message) {
+                    responseMessage = data.error.message;
+                  } else {
+                    responseMessage = 'Invalid API Response';
+                  }
+                } catch (e) {
+                  responseMessage = 'Connection Error';
+                }
+              }
+              
+              const result = { email, token, status, responseMessage };
+              
+              resolve(result);
+            });
+          });
+
+          const batchResults = await Promise.all(promises);
+
+          batchResults.forEach(result => {
             results.push(result);
             const logEntry = document.createElement('div');
             const aTag = document.createElement('a');
             aTag.target = '_blank';
             aTag.textContent = 'Check Link';
-            aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(token)}`;
-
-            if (status === 'Success') {
-              const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ');
+            aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
+            
+            if (result.status === 'Success') {
+              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ');
               logEntry.appendChild(textNode);
               logEntry.appendChild(aTag);
               successList.appendChild(logEntry);
               successCount++;
             } else {
-              const displayMessage = responseMessage;
-              const textNode = document.createTextNode((email || 'N/A') + ' | ' + token.substring(0,15) + '... - ' + displayMessage + ' ');
+              const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
+              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ' + displayMessage + ' ');
               logEntry.appendChild(textNode);
               logEntry.appendChild(aTag);
               failedList.appendChild(logEntry);
@@ -554,12 +553,8 @@
             tokensChecked++;
             updateProgressBar();
             autoScroll();
-            
-            resolve(result);
           });
-        });
-
-        await Promise.all(promises);
+        }
 
         tokensChecked = totalTokens;
         updateProgressBar();
