@@ -489,6 +489,9 @@
         // Public CORS proxy to avoid browser security issues
         const proxyUrl = 'https://corsproxy.io/?'; 
 
+        // Function to introduce a delay
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
         for (let i = 0; i < lines.length; i += batchSize) {
           const batch = lines.slice(i, i + batchSize);
 
@@ -558,6 +561,9 @@
             updateProgressBar();
             autoScroll();
           });
+
+          // Maghintay ng 1000 milliseconds (1 segundo) pagkatapos ng bawat batch
+          await delay(1000); 
         }
 
         tokensChecked = totalTokens;
