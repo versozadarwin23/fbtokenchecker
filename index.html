@@ -507,7 +507,6 @@
                   const data = await res.json();
                   if (data.id) {
                     status = 'Success';
-                    responseMessage = 'Valid Token';
                   } else if (data.error && data.error.message) {
                     responseMessage = data.error.message;
                   } else {
