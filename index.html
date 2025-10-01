@@ -337,12 +337,12 @@
         e.preventDefault();
         return false;
       }
-      
+
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
         e.preventDefault();
         return false;
       }
-      
+
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
         e.preventDefault();
         return false;
@@ -353,7 +353,7 @@
         return false;
       }
     };
-    
+
     let results = [], totalTokens = 0, tokensChecked = 0;
     let successCount = 0, failedCount = 0;
     const fileInput = document.getElementById('fileInput');
@@ -382,7 +382,7 @@
       progressBar.textContent = `${pct}% (${tokensChecked}/${totalTokens})`;
 
       remainingCountLabel.textContent = `${totalTokens - tokensChecked}`;
-      
+
       if (tokensChecked === totalTokens) {
         progressBarContainer.style.display = 'none';
         checkBtn.disabled = false;
@@ -424,7 +424,7 @@
       successList.style.overflowY = 'hidden';
       failedList.style.overflowY = 'hidden';
     });
-    
+
     downloadBtn.addEventListener('click', () => {
       let csvContent = "data:text/csv;charset=utf-8,";
       csvContent += "Email,Token,Status\n";
@@ -472,7 +472,7 @@
       let responseMessage = 'Unknown Error';
       if (token) {
         try {
-          const proxyUrl = 'https://corsproxy.io/?'; 
+          const proxyUrl = 'https://corsproxy.io/?';
           const apiRequestUrl = `https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`;
           const res = await fetch(proxyUrl + encodeURIComponent(apiRequestUrl));
           const data = await res.json();
@@ -489,18 +489,15 @@
       }
       return { email, token, status, responseMessage };
     };
-    
-    // Function para mag-delay
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     checkBtn.addEventListener('click', async () => {
       if (totalTokens === 0 || !fileInput.files.length) {
         return alert('❌ Please select a file.');
       }
-      
+
       checkBtn.textContent = 'Checking...';
       checkBtn.disabled = true;
-      
+
       successList.style.overflowY = 'auto';
       failedList.style.overflowY = 'auto';
 
@@ -508,9 +505,9 @@
       successCount = 0; failedCount = 0;
       successCountLabel.textContent = '0';
       failedCountLabel.textContent = '0';
-      successList.textContent = ''; 
+      successList.textContent = '';
       failedList.textContent = '';
-      
+
       downloadBtn.disabled = true;
       progressBarContainer.style.display = 'block';
 
@@ -518,41 +515,47 @@
       reader.onload = async () => {
         const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
         totalTokens = lines.length;
-        
-        // Magche-check na ng bawat linya nang paisa-isa
-        for (const line of lines) {
-          const result = await checkToken(line);
-          results.push(result);
+        remainingCountLabel.textContent = `${totalTokens}`;
 
-          const logEntry = document.createElement('div');
-          const aTag = document.createElement('a');
-          aTag.target = '_blank';
-          aTag.textContent = 'Check Link';
-          aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
-          
-          if (result.status === 'Success') {
-            const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ');
-            logEntry.appendChild(textNode);
-            logEntry.appendChild(aTag);
-            successList.appendChild(logEntry);
-            successCount++;
-          } else {
-            const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
-            const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ' + displayMessage + ' ');
-            logEntry.appendChild(textNode);
-            logEntry.appendChild(aTag);
-            failedList.appendChild(logEntry);
-            failedCount++;
+        const BATCH_SIZE = 10;
+        const batches = [];
+        for (let i = 0; i < totalTokens; i += BATCH_SIZE) {
+          batches.push(lines.slice(i, i + BATCH_SIZE));
+        }
+
+        for (const batch of batches) {
+          const promises = batch.map(line => checkToken(line));
+          const batchResults = await Promise.all(promises);
+
+          for (const result of batchResults) {
+            results.push(result);
+            const logEntry = document.createElement('div');
+            const aTag = document.createElement('a');
+            aTag.target = '_blank';
+            aTag.textContent = 'Check Link';
+            aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
+
+            if (result.status === 'Success') {
+              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ');
+              logEntry.appendChild(textNode);
+              logEntry.appendChild(aTag);
+              successList.appendChild(logEntry);
+              successCount++;
+            } else {
+              const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
+              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ' + displayMessage + ' ');
+              logEntry.appendChild(textNode);
+              logEntry.appendChild(aTag);
+              failedList.appendChild(logEntry);
+              failedCount++;
+            }
+
+            tokensChecked++;
           }
-
           successCountLabel.textContent = successCount;
           failedCountLabel.textContent = failedCount;
-          tokensChecked++;
           updateProgressBar();
           autoScroll();
-          
-          // Maghihintay muna ng 500 milliseconds (0.5 segundo) bago mag-check ulit
-          await delay(500); 
         }
 
         tokensChecked = totalTokens;
