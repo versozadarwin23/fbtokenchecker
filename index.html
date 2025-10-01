@@ -459,6 +459,37 @@
       document.body.removeChild(link);
     });
 
+    // Ang async function na magche-check ng bawat token nang paisa-isa
+    const checkToken = async (line) => {
+      let email = 'N/A', token = line.trim();
+      if (line.includes('|')) {
+        const parts = line.split('|');
+        email = parts[0].trim();
+        token = parts[1]?.trim() || '';
+      }
+
+      let status = 'Failed';
+      let responseMessage = 'Unknown Error';
+      if (token) {
+        try {
+          const proxyUrl = 'https://corsproxy.io/?'; 
+          const apiRequestUrl = `https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`;
+          const res = await fetch(proxyUrl + encodeURIComponent(apiRequestUrl));
+          const data = await res.json();
+          if (data.id) {
+            status = 'Success';
+          } else if (data.error && data.error.message) {
+            responseMessage = data.error.message;
+          } else {
+            responseMessage = 'Invalid API Response';
+          }
+        } catch (e) {
+          responseMessage = 'Connection Error';
+        }
+      }
+      return { email, token, status, responseMessage };
+    };
+
     checkBtn.addEventListener('click', async () => {
       if (totalTokens === 0 || !fileInput.files.length) {
         return alert('❌ Please select a file.');
@@ -485,85 +516,37 @@
         const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
         totalTokens = lines.length;
         
-        const batchSize = 20;
-        // Public CORS proxy to avoid browser security issues
-        const proxyUrl = 'https://corsproxy.io/?'; 
+        // Magche-check na ng bawat linya nang paisa-isa
+        for (const line of lines) {
+          const result = await checkToken(line);
+          results.push(result);
 
-        // Function to introduce a delay
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+          const logEntry = document.createElement('div');
+          const aTag = document.createElement('a');
+          aTag.target = '_blank';
+          aTag.textContent = 'Check Link';
+          aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
+          
+          if (result.status === 'Success') {
+            const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ');
+            logEntry.appendChild(textNode);
+            logEntry.appendChild(aTag);
+            successList.appendChild(logEntry);
+            successCount++;
+          } else {
+            const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
+            const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ' + displayMessage + ' ');
+            logEntry.appendChild(textNode);
+            logEntry.appendChild(aTag);
+            failedList.appendChild(logEntry);
+            failedCount++;
+          }
 
-        for (let i = 0; i < lines.length; i += batchSize) {
-          const batch = lines.slice(i, i + batchSize);
-
-          const promises = batch.map(line => {
-            return new Promise(async (resolve) => {
-              let email = 'N/A', token = line.trim();
-              if (line.includes('|')) {
-                const parts = line.split('|');
-                email = parts[0].trim();
-                token = parts[1]?.trim() || '';
-              }
-
-              let status = 'Failed';
-              let responseMessage = 'Unknown Error';
-              if (token) {
-                try {
-                  // NEW: Gamit ang CORS proxy para maiwasan ang error
-                  const apiRequestUrl = `https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`;
-                  const res = await fetch(proxyUrl + encodeURIComponent(apiRequestUrl));
-                  const data = await res.json();
-                  if (data.id) {
-                    status = 'Success';
-                  } else if (data.error && data.error.message) {
-                    responseMessage = data.error.message;
-                  } else {
-                    responseMessage = 'Invalid API Response';
-                  }
-                } catch (e) {
-                  responseMessage = 'Connection Error';
-                }
-              }
-              
-              const result = { email, token, status, responseMessage };
-              
-              resolve(result);
-            });
-          });
-
-          const batchResults = await Promise.all(promises);
-
-          batchResults.forEach(result => {
-            results.push(result);
-            const logEntry = document.createElement('div');
-            const aTag = document.createElement('a');
-            aTag.target = '_blank';
-            aTag.textContent = 'Check Link';
-            aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
-            
-            if (result.status === 'Success') {
-              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ');
-              logEntry.appendChild(textNode);
-              logEntry.appendChild(aTag);
-              successList.appendChild(logEntry);
-              successCount++;
-            } else {
-              const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
-              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ' + displayMessage + ' ');
-              logEntry.appendChild(textNode);
-              logEntry.appendChild(aTag);
-              failedList.appendChild(logEntry);
-              failedCount++;
-            }
-
-            successCountLabel.textContent = successCount;
-            failedCountLabel.textContent = failedCount;
-            tokensChecked++;
-            updateProgressBar();
-            autoScroll();
-          });
-
-          // Maghintay ng 1000 milliseconds (1 segundo) pagkatapos ng bawat batch
-          await delay(1000); 
+          successCountLabel.textContent = successCount;
+          failedCountLabel.textContent = failedCount;
+          tokensChecked++;
+          updateProgressBar();
+          autoScroll();
         }
 
         tokensChecked = totalTokens;
