@@ -427,7 +427,7 @@
     
     downloadBtn.addEventListener('click', () => {
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Email,Token,Status\n";
+      csvContent += "Email,Token,Status,Error\n";
 
       const successResults = results.filter(item => item.status === 'Success');
       const failedResults = results.filter(item => item.status === 'Failed');
@@ -436,7 +436,8 @@
         const row = [
           `"${item.email.replace(/"/g, '""')}"`,
           `"${item.token.replace(/"/g, '""')}"`,
-          `"${item.status}"`
+          `"${item.status}"`,
+          `""`
         ];
         csvContent += row.join(",") + "\n";
       });
@@ -445,7 +446,8 @@
         const row = [
           `"${item.email.replace(/"/g, '""')}"`,
           `"${item.token.replace(/"/g, '""')}"`,
-          `"${item.status}"`
+          `"${item.status}"`,
+          `"${item.responseMessage.replace(/"/g, '""')}"`
         ];
         csvContent += row.join(",") + "\n";
       });
@@ -478,6 +480,7 @@
           const data = await res.json();
           if (data.id) {
             status = 'Success';
+            responseMessage = ''; // Clear error message for success
           } else if (data.error && data.error.message) {
             responseMessage = data.error.message;
           } else {
@@ -537,7 +540,8 @@
             successList.appendChild(logEntry);
             successCount++;
           } else {
-            const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
+            // Gamitin ang responseMessage para sa mas detalyadong log
+            const displayMessage = result.responseMessage || 'Failed'; 
             const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0,15) + '... - ' + displayMessage + ' ');
             logEntry.appendChild(textNode);
             logEntry.appendChild(aTag);
@@ -551,8 +555,8 @@
           updateProgressBar();
           autoScroll();
           
-          // Maghihintay muna ng 500 milliseconds (0.5 segundo) bago mag-check ulit
-          await delay(500); 
+          // Maghihintay muna ng 1000 milliseconds (1 segundo) bago mag-check ulit
+          await delay(1000); 
         }
 
         tokensChecked = totalTokens;
