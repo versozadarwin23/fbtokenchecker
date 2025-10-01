@@ -46,6 +46,7 @@
       font-weight: 800;
       text-align: center;
     }
+
     .top-controls { margin-bottom: 15px; }
     input[type=file] {
       background: var(--secondary-gray);
@@ -67,6 +68,7 @@
       font-weight: 600;
     }
     input[type=file]::file-selector-button:hover { background: #0056b3; }
+
     #tokenCount {
       padding: 10px; border-radius: 8px; font-weight: 600; font-size: 1.1em; margin-bottom: 10px;
       background: rgba(255, 255, 255, 0.05);
@@ -75,16 +77,19 @@
       align-items: center;
       gap: 10px;
     }
+
     #checkIcon {
       display: none;
       color: var(--success-green);
       font-size: 1.2em;
       animation: check-fade-in 0.5s ease-in-out forwards;
     }
+
     @keyframes check-fade-in {
       from { opacity: 0; transform: scale(0.5); }
       to { opacity: 1; transform: scale(1); }
     }
+    
     .panel h3 {
       display: flex;
       justify-content: space-between;
@@ -93,6 +98,7 @@
       font-weight: 700;
       margin-bottom: 10px;
     }
+
     .results {
       display: flex;
       gap: 25px;
@@ -107,6 +113,7 @@
       padding: 20px;
       box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     }
+    
     .panel-content {
       flex: 1;
       background: #242526;
@@ -114,16 +121,18 @@
       padding: 15px;
       font-family: 'Poppins', sans-serif;
       font-size: 0.9em;
-      overflow-y: hidden;
+      overflow-y: hidden; 
       white-space: pre-wrap;
       word-break: break-all;
       max-height: 350px;
       line-height: 1.6;
     }
+    
     .success-panel { border: 2px solid var(--success-green); }
     .success-panel h3 { color: var(--success-green); }
     .failed-panel { border: 2px solid var(--fail-red); }
     .failed-panel h3 { color: var(--fail-red); }
+
     .panel-content a {
       color: #58B0FF;
       text-decoration: none;
@@ -133,6 +142,7 @@
       text-decoration: underline;
       color: #3B9AE2;
     }
+
     .button-group { display: flex; gap: 20px; flex-shrink: 0; }
     button {
       flex: 1; padding: 15px; border-radius: 10px; border: none;
@@ -146,6 +156,7 @@
     #clearBtn { background: var(--fail-red); color: #fff; }
     #clearBtn:hover:not(:disabled) { background: #B21F2D; transform: translateY(-2px); }
     button:disabled { background: var(--secondary-gray); cursor: not-allowed; box-shadow: none; }
+
     #progressBarContainer {
       width: 100%; background: var(--secondary-gray);
       border-radius: 8px; overflow: hidden; margin-top: 20px;
@@ -157,6 +168,7 @@
       color: var(--background-dark); font-weight: 700;
       transition: width 0.4s ease;
     }
+
     .social-links-container {
       margin-top: auto;
       text-align: center;
@@ -189,6 +201,7 @@
     .social-btn.fb { background: #007BFF; }
     .social-btn.yt { background: #DC3545; }
     .social-btn.tg { background: #00A3D9; }
+
     .developer-info {
         font-size: 1em;
         text-align: center;
@@ -196,6 +209,7 @@
         font-weight: 600;
         margin-top: 15px;
     }
+
     @media (max-width: 700px) {
       body { padding: 15px; }
       .container {
@@ -228,10 +242,13 @@
 <body>
   <div class="container">
     <h2>FB Token Checker V3</h2>
+
     <div class="top-controls">
       <input type="file" id="fileInput" accept=".txt">
     </div>
+
     <p id="tokenCount">Total tokens to check: <span id="remainingCount">0</span> <span id="checkIcon">✅</span></p>
+
     <div class="results">
       <div class="panel success-panel">
         <h3>
@@ -248,12 +265,15 @@
         <div class="panel-content" id="failedList">No failures yet.</div>
       </div>
     </div>
+
     <div class="button-group">
       <button id="checkBtn">🚀 Start Check</button>
       <button id="downloadBtn" disabled>💾 Download CSV</button>
       <button id="clearBtn">🛑 Stop/Reset</button>
     </div>
+
     <div id="progressBarContainer"><div id="progressBar">0%</div></div>
+
     <div class="social-links-container">
       <p style="font-size: 1.1em; font-weight: 600;">👤 Developer Contact:</p>
       <p style="font-size: 0.9em; margin-top: -10px;">For feedback, questions, or updates, please check my social links:</p>
@@ -271,6 +291,7 @@
             .597 23.403 0 22.675 0z"/>
           </svg>
         </a>
+
         <a href="https://www.youtube.com/@darwinversoza" target="_blank" class="social-btn yt">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
             <path d="M23.498 6.186a2.974 
@@ -286,6 +307,7 @@
             15.568z"/>
           </svg>
         </a>
+
         <a href="https://t.me/versozadarwin" target="_blank" class="social-btn tg">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
             <path d="M9.999 16.2l-.401 
@@ -301,30 +323,37 @@
         </a>
       </div>
     </div>
+
     <p class="developer-info">Developed by **Dars: V3**</p>
   </div>
+
   <script>
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
     });
+
     document.onkeydown = function(e) {
       if (e.key === 'F12') {
         e.preventDefault();
         return false;
       }
+
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
         e.preventDefault();
         return false;
       }
+
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
         e.preventDefault();
         return false;
       }
+
       if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
         e.preventDefault();
         return false;
       }
     };
+
     let results = [], totalTokens = 0, tokensChecked = 0;
     let successCount = 0, failedCount = 0;
     const fileInput = document.getElementById('fileInput');
@@ -340,16 +369,20 @@
     const failedCountLabel = document.getElementById('failedCount');
     const remainingCountLabel = document.getElementById('remainingCount');
     const checkIcon = document.getElementById('checkIcon');
+
     function autoScroll() {
       successList.scrollTop = successList.scrollHeight;
       failedList.scrollTop = failedList.scrollHeight;
     }
+
     function updateProgressBar() {
       if (totalTokens === 0) return;
       const pct = Math.round((tokensChecked / totalTokens) * 100);
       progressBar.style.width = pct + '%';
       progressBar.textContent = `${pct}% (${tokensChecked}/${totalTokens})`;
+
       remainingCountLabel.textContent = `${totalTokens - tokensChecked}`;
+
       if (tokensChecked === totalTokens) {
         progressBarContainer.style.display = 'none';
         checkBtn.disabled = false;
@@ -359,6 +392,7 @@
         checkBtn.textContent = '🚀 Start Check';
       }
     }
+
     fileInput.addEventListener('change', () => {
       if (!fileInput.files.length) return;
       const reader = new FileReader();
@@ -371,6 +405,7 @@
       };
       reader.readAsText(fileInput.files[0]);
     });
+
     clearBtn.addEventListener('click', () => {
       results = []; tokensChecked = 0; totalTokens = 0;
       successCount = 0; failedCount = 0;
@@ -385,14 +420,18 @@
       downloadBtn.disabled = true; checkBtn.disabled = false;
       fileInput.value = '';
       checkBtn.textContent = '🚀 Start Check';
+
       successList.style.overflowY = 'hidden';
       failedList.style.overflowY = 'hidden';
     });
+
     downloadBtn.addEventListener('click', () => {
       let csvContent = "data:text/csv;charset=utf-8,";
       csvContent += "Email,Token,Status\n";
+
       const successResults = results.filter(item => item.status === 'Success');
       const failedResults = results.filter(item => item.status === 'Failed');
+
       successResults.forEach(item => {
         const row = [
           `"${item.email.replace(/"/g, '""')}"`,
@@ -401,6 +440,7 @@
         ];
         csvContent += row.join(",") + "\n";
       });
+
       failedResults.forEach(item => {
         const row = [
           `"${item.email.replace(/"/g, '""')}"`,
@@ -409,6 +449,7 @@
         ];
         csvContent += row.join(",") + "\n";
       });
+
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
@@ -417,7 +458,8 @@
       link.click();
       document.body.removeChild(link);
     });
-    // Binago na ang proxy para mas mabilis at stable ang response
+
+    // Ang async function na magche-check ng bawat token nang paisa-isa
     const checkToken = async (line) => {
       let email = 'N/A', token = line.trim();
       if (line.includes('|')) {
@@ -425,13 +467,14 @@
         email = parts[0].trim();
         token = parts[1]?.trim() || '';
       }
+
       let status = 'Failed';
       let responseMessage = 'Unknown Error';
       if (token) {
         try {
+          const proxyUrl = 'https://corsproxy.io/?';
           const apiRequestUrl = `https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(token)}`;
-          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiRequestUrl)}`;
-          const res = await fetch(proxyUrl);
+          const res = await fetch(proxyUrl + encodeURIComponent(apiRequestUrl));
           const data = await res.json();
           if (data.id) {
             status = 'Success';
@@ -446,35 +489,44 @@
       }
       return { email, token, status, responseMessage };
     };
+
     checkBtn.addEventListener('click', async () => {
       if (totalTokens === 0 || !fileInput.files.length) {
         return alert('❌ Please select a file.');
       }
+
       checkBtn.textContent = 'Checking...';
       checkBtn.disabled = true;
+
       successList.style.overflowY = 'auto';
       failedList.style.overflowY = 'auto';
+
       results = []; tokensChecked = 0;
       successCount = 0; failedCount = 0;
       successCountLabel.textContent = '0';
       failedCountLabel.textContent = '0';
       successList.textContent = '';
       failedList.textContent = '';
+
       downloadBtn.disabled = true;
       progressBarContainer.style.display = 'block';
+
       const reader = new FileReader();
       reader.onload = async () => {
         const lines = reader.result.split(/\r?\n/).filter(l => l.trim());
         totalTokens = lines.length;
         remainingCountLabel.textContent = `${totalTokens}`;
-        const BATCH_SIZE = 20; // Pwede mong baguhin ang batch size para sa mas mabilis na check
+
+        const BATCH_SIZE = 10;
         const batches = [];
         for (let i = 0; i < totalTokens; i += BATCH_SIZE) {
           batches.push(lines.slice(i, i + BATCH_SIZE));
         }
+
         for (const batch of batches) {
           const promises = batch.map(line => checkToken(line));
           const batchResults = await Promise.all(promises);
+
           for (const result of batchResults) {
             results.push(result);
             const logEntry = document.createElement('div');
@@ -482,6 +534,7 @@
             aTag.target = '_blank';
             aTag.textContent = 'Check Link';
             aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
+
             if (result.status === 'Success') {
               const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ');
               logEntry.appendChild(textNode);
@@ -496,6 +549,7 @@
               failedList.appendChild(logEntry);
               failedCount++;
             }
+
             tokensChecked++;
           }
           successCountLabel.textContent = successCount;
@@ -503,6 +557,7 @@
           updateProgressBar();
           autoScroll();
         }
+
         tokensChecked = totalTokens;
         updateProgressBar();
         downloadBtn.disabled = false;
