@@ -1,25 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Token Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #1c1e21;
+        }
+
+        .controls, .status-container, .results-container {
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            border: 2px dashed #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #checkBtn {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        #checkBtn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        #clearBtn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #downloadBtn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #downloadBtn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .status-container {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 25px;
+            background-color: #0d6efd;
+            border-radius: 5px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            line-height: 25px;
+            transition: width 0.4s ease;
+        }
+
+        .results-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .results-box {
+            flex: 1;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: hidden; /* Initial state */
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        }
+
+        .results-box h3 {
+            margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-box h3 span {
+            font-size: 1.5em;
+        }
+
+        #successList, #failedList {
+            margin: 0;
+            padding: 0;
+            list-style-type: none;
+            font-size: 14px;
+        }
+
+        #successList div, #failedList div {
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+
+        #successList a, #failedList a {
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: normal;
+        }
+
+        #checkIcon {
+            color: #28a745;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Facebook Token Checker</h1>
+    <h2>Upload and Check Your Tokens</h2>
+
+    <div class="controls">
+        <input type="file" id="fileInput" accept=".txt, .csv">
+        <div class="buttons">
+            <button id="checkBtn">🚀 Start Check</button>
+            <button id="clearBtn">🧹 Clear</button>
+            <button id="downloadBtn" disabled>💾 Download Results</button>
+        </div>
+    </div>
+
+    <div class="status-container">
+        <div>Total Remaining: <span id="remainingCount">0</span> <span id="checkIcon">✅</span></div>
+    </div>
+
+    <div class="progress-bar-container" id="progressBarContainer" style="display: none;">
+        <div class="progress-bar" id="progressBar">0% (0/0)</div>
+    </div>
+
+    <hr>
+
+    <div class="results-container">
+        <div class="results-box success-box">
+            <h3>Successes <span id="successCount">0</span></h3>
+            <div id="successList">No successes yet.</div>
+        </div>
+        <div class="results-box failed-box">
+            <h3>Failures <span id="failedCount">0</span></h3>
+            <div id="failedList">No failures yet.</div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
     });
 
     document.onkeydown = function(e) {
-      if (e.key === 'F12') {
-        e.preventDefault();
-        return false;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
-        e.preventDefault();
-        return false;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
-        e.preventDefault();
-        return false;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
+      if (e.key === 'F12' ||
+          (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i') ||
+          (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j') ||
+          (e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
         e.preventDefault();
         return false;
       }
@@ -28,7 +224,6 @@
     let results = [], totalTokens = 0, tokensChecked = 0;
     let successCount = 0, failedCount = 0;
     const fileInput = document.getElementById('fileInput');
-    const tokenCountLabel = document.getElementById('tokenCount');
     const checkBtn = document.getElementById('checkBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     const clearBtn = document.getElementById('clearBtn');
@@ -149,10 +344,13 @@
           const data = await res.json();
           if (data.id) {
             status = 'Success';
+            responseMessage = 'Valid';
           } else if (data.error && data.error.message) {
             responseMessage = data.error.message;
+          } else if (Object.keys(data).length === 0) {
+            responseMessage = 'Empty Response';
           } else {
-            responseMessage = 'Invalid API Response';
+            responseMessage = 'Invalid API Response: No ID found';
           }
         } catch (e) {
           responseMessage = 'Connection Error';
@@ -238,3 +436,6 @@
       reader.readAsText(fileInput.files[0]);
     });
 </script>
+
+</body>
+</html>
