@@ -489,6 +489,9 @@
       }
       return { email, token, status, responseMessage };
     };
+    
+    // Function para mag-delay
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     checkBtn.addEventListener('click', async () => {
       if (totalTokens === 0 || !fileInput.files.length) {
@@ -547,6 +550,9 @@
           tokensChecked++;
           updateProgressBar();
           autoScroll();
+          
+          // Maghihintay muna ng 500 milliseconds (0.5 segundo) bago mag-check ulit
+          await delay(500); 
         }
 
         tokensChecked = totalTokens;
