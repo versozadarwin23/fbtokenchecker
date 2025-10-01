@@ -393,11 +393,6 @@
       }
     }
 
-    // Function to introduce a delay
-    function delay(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
     fileInput.addEventListener('change', () => {
       if (!fileInput.files.length) return;
       const reader = new FileReader();
@@ -509,8 +504,9 @@
       results = []; tokensChecked = 0;
       successCount = 0; failedCount = 0;
       successCountLabel.textContent = '0';
-      failedList.textContent = '';
+      failedCountLabel.textContent = '0';
       successList.textContent = '';
+      failedList.textContent = '';
 
       downloadBtn.disabled = true;
       progressBarContainer.style.display = 'block';
@@ -521,40 +517,45 @@
         totalTokens = lines.length;
         remainingCountLabel.textContent = `${totalTokens}`;
 
-        for (const line of lines) {
-          if (!checkBtn.disabled) break; // If user clicks 'Stop', stop checking
-          const result = await checkToken(line);
-          results.push(result);
+        const BATCH_SIZE = 100;
+        const batches = [];
+        for (let i = 0; i < totalTokens; i += BATCH_SIZE) {
+          batches.push(lines.slice(i, i + BATCH_SIZE));
+        }
 
-          const logEntry = document.createElement('div');
-          const aTag = document.createElement('a');
-          aTag.target = '_blank';
-          aTag.textContent = 'Check Link';
-          aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
+        for (const batch of batches) {
+          const promises = batch.map(line => checkToken(line));
+          const batchResults = await Promise.all(promises);
 
-          if (result.status === 'Success') {
-            const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ');
-            logEntry.appendChild(textNode);
-            logEntry.appendChild(aTag);
-            successList.appendChild(logEntry);
-            successCount++;
-          } else {
-            const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
-            const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ' + displayMessage + ' ');
-            logEntry.appendChild(textNode);
-            logEntry.appendChild(aTag);
-            failedList.appendChild(logEntry);
-            failedCount++;
+          for (const result of batchResults) {
+            results.push(result);
+            const logEntry = document.createElement('div');
+            const aTag = document.createElement('a');
+            aTag.target = '_blank';
+            aTag.textContent = 'Check Link';
+            aTag.href = `https://developers.facebook.com/tools/debug/accesstoken/?access_token=${encodeURIComponent(result.token)}`;
+
+            if (result.status === 'Success') {
+              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ');
+              logEntry.appendChild(textNode);
+              logEntry.appendChild(aTag);
+              successList.appendChild(logEntry);
+              successCount++;
+            } else {
+              const displayMessage = (result.responseMessage === 'Connection Error') ? 'Blocked' : result.responseMessage;
+              const textNode = document.createTextNode((result.email || 'N/A') + ' | ' + result.token.substring(0, 15) + '... - ' + displayMessage + ' ');
+              logEntry.appendChild(textNode);
+              logEntry.appendChild(aTag);
+              failedList.appendChild(logEntry);
+              failedCount++;
+            }
+
+            tokensChecked++;
           }
-
-          tokensChecked++;
           successCountLabel.textContent = successCount;
           failedCountLabel.textContent = failedCount;
           updateProgressBar();
           autoScroll();
-
-          // Add a 1-second delay between requests
-          await delay(1000);
         }
 
         tokensChecked = totalTokens;
